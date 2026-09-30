@@ -1,0 +1,11 @@
+// Basic Breezy scanner test
+
+let name = "Korbin";
+let score = 100;
+
+show name;
+show score;
+
+if (score >= 50) {
+    show "Good score";
+}

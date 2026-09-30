@@ -1,9 +1,13 @@
 import sys
+from scanner import Scanner
 
 
 def run(source):
-    print(source)
-    print("Scanner Not Implemented")
+    scanner = Scanner(source)
+    tokens = scanner.scan_tokens()
+
+    for token in tokens:
+        print(token)
 
 
 def run_file(path):
@@ -25,7 +29,7 @@ def run_prompt():
 
 def main():
     if len(sys.argv) > 2:
-        print("Usage: lox [script]")
+        print("Usage: breezy [script]")
     elif len(sys.argv) == 2:
         run_file(sys.argv[1])
     else:
