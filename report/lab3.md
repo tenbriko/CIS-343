@@ -33,8 +33,6 @@ File mode: `python src/breezy.py test/lab3/valid.bzy`
 
 ## Tests
 
-## Tests
-
 I tested the parser using different expressions and errors. All expected outputs matched the actual outputs.
 
 | Test | Input | Expected and actual output | Result |
