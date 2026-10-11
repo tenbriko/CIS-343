@@ -1,13 +1,25 @@
 import sys
 from scanner import Scanner
+from parser import Parser, ParseError
+from ast_printer import AstPrinter
 
 
 def run(source):
     scanner = Scanner(source)
     tokens = scanner.scan_tokens()
+    
+    if scanner.had_error:
+        return
 
-    for token in tokens:
-        print(token)
+    try:
+        parser = Parser(tokens)
+        expression = parser.parse()
+
+        printer = AstPrinter()
+        print(printer.print(expression))
+
+    except ParseError as error:
+        print(error)
 
 
 def run_file(path):
@@ -22,7 +34,7 @@ def run_prompt():
         try:
             line = input("> ")
             run(line)
-        except KeyboardInterrupt:
+        except (KeyboardInterrupt, EOFError):
             print()
             break
 

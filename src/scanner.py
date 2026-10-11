@@ -16,6 +16,7 @@ class Scanner:
         "true": TokenType.TRUE,
         "let": TokenType.LET,
         "while": TokenType.WHILE,
+        "nil": TokenType.NIL,
     }
     def __init__(self, source):
         self.source = source
@@ -24,6 +25,7 @@ class Scanner:
         self.start = 0
         self.current = 0
         self.line = 1
+        self.had_error = False
 
     def scan_tokens(self):
         while not self.is_at_end():
@@ -98,6 +100,7 @@ class Scanner:
         elif self.is_alpha(c):
             self.identifier()
         else:
+            self.had_error = True
             print(f"[line {self.line}] Error: Unexpected character '{c}'.")
 
     def is_at_end(self):
@@ -154,6 +157,7 @@ class Scanner:
                 self.line += 1
             self.advance()
         if self.is_at_end():
+            self.had_error = True
             print(f"[line {starting_line}] Error: Unterminated string.")
             return
 

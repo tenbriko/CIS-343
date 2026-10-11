@@ -43,6 +43,7 @@ class TokenType(Enum):
     TRUE = auto()
     LET = auto()
     WHILE = auto()
+    NIL = auto()
 
     # End of file
     EOF = auto()
