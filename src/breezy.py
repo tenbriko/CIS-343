@@ -1,13 +1,13 @@
 import sys
 from scanner import Scanner
 from parser import Parser, ParseError
-from ast_printer import AstPrinter
+from evaluator import Evaluator
 
 
 def run(source):
     scanner = Scanner(source)
     tokens = scanner.scan_tokens()
-    
+
     if scanner.had_error:
         return
 
@@ -15,10 +15,19 @@ def run(source):
         parser = Parser(tokens)
         expression = parser.parse()
 
-        printer = AstPrinter()
-        print(printer.print(expression))
+        evaluator = Evaluator()
+        result = evaluator.evaluate(expression)
 
-    except ParseError as error:
+        if result is None:
+            print("nil")
+        elif result is True:
+            print("true")
+        elif result is False:
+            print("false")
+        else:
+            print(result)
+
+    except (ParseError, RuntimeError) as error:
         print(error)
 
 
