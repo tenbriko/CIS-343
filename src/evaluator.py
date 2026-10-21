@@ -26,6 +26,9 @@ class Evaluator:
             right = self.evaluate(expr.right)
             operator = expr.operator.lexeme
 
+            left = self.to_number(left)
+            right = self.to_number(right)
+
             if operator == "+":
                 if type(left) == float and type(right) == float:
                     return left + right
@@ -40,26 +43,32 @@ class Evaluator:
 
                 if operator == "-":
                     return left - right
+
                 if operator == "*":
                     return left * right
+
                 if operator == "/":
                     if right == 0:
                         self.error(expr.operator, "Cannot divide by zero.")
                     return left / right
+
                 if operator == ">":
                     return left > right
+
                 if operator == ">=":
                     return left >= right
+
                 if operator == "<":
                     return left < right
+
                 if operator == "<=":
                     return left <= right
 
             if operator == "==":
-                return type(left) == type(right) and left == right
+                return left == right
 
             if operator == "!=":
-                return not (type(left) == type(right) and left == right)
+                return left != right
 
         raise RuntimeError("Unknown expression.")
 
@@ -67,6 +76,15 @@ class Evaluator:
         if value is None or value is False:
             return False
         return True
+
+    def to_number(self, value):
+        if value is True:
+            return 1.0
+
+        if value is False:
+            return 0.0
+
+        return value
 
     def check_number(self, value, token):
         if type(value) != float:
