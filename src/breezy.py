@@ -1,6 +1,6 @@
 import sys
 from scanner import Scanner
-from parser import Parser, ParseError
+from parser import Parser
 from evaluator import Evaluator
 
 
@@ -11,24 +11,17 @@ def run(source):
     if scanner.had_error:
         return
 
-    try:
-        parser = Parser(tokens)
-        expression = parser.parse()
+    parser = Parser(tokens)
+    statements = parser.parse()
 
-        evaluator = Evaluator()
-        result = evaluator.evaluate(expression)
+    evaluator = Evaluator()
 
-        if result is None:
-            print("nil")
-        elif result is True:
-            print("true")
-        elif result is False:
-            print("false")
-        else:
-            print(result)
-
-    except (ParseError, RuntimeError) as error:
-        print(error)
+    for statement in statements:
+        try:
+            evaluator.execute(statement)
+        except RuntimeError as error:
+            print(error)
+            break
 
 
 def run_file(path):
@@ -51,8 +44,10 @@ def run_prompt():
 def main():
     if len(sys.argv) > 2:
         print("Usage: breezy [script]")
+
     elif len(sys.argv) == 2:
         run_file(sys.argv[1])
+
     else:
         run_prompt()
 

@@ -1,8 +1,28 @@
-
 from expr import Binary, Unary, Grouping, Literal
+from stmt import Expression, Show
 
 
 class Evaluator:
+    def execute(self, stmt):
+        if isinstance(stmt, Expression):
+            self.evaluate(stmt.expression)
+
+        elif isinstance(stmt, Show):
+            value = self.evaluate(stmt.expression)
+            print(self.stringify(value))
+
+    def stringify(self, value):
+        if value is None:
+            return "nil"
+
+        if value is True:
+            return "true"
+
+        if value is False:
+            return "false"
+
+        return str(value)
+
     def evaluate(self, expr):
         if isinstance(expr, Literal):
             return expr.value

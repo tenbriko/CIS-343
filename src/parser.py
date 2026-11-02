@@ -1,5 +1,6 @@
 from token_type import TokenType
 from expr import Binary, Unary, Grouping, Literal
+from stmt import Expression, Show
 
 
 class ParseError(Exception):
@@ -12,16 +13,36 @@ class Parser:
         self.current = 0
 
     def parse(self):
-        expression = self.expression()
+        statements = []
 
-        if not self.is_at_end():
-            raise self.error(self.peek(), "Unexpected token after expression.")
+        while not self.is_at_end():
+            try:
+                statements.append(self.statement())
+            except ParseError as error:
+                print(error)
+                self.synchronize()
 
-        return expression
+        return statements
+
+    def statement(self):
+        if self.match(TokenType.SHOW):
+            return self.show_statement()
+
+        return self.expression_statement()
+
+    def show_statement(self):
+        value = self.expression()
+        self.consume(TokenType.SEMICOLON, "Expected ';' after value.")
+        return Show(value)
+
+    def expression_statement(self):
+        value = self.expression()
+        self.consume(TokenType.SEMICOLON, "Expected ';' after expression.")
+        return Expression(value)
 
     def expression(self):
         return self.equality()
-    
+
     def equality(self):
         expr = self.comparison()
 
@@ -78,7 +99,7 @@ class Parser:
     def primary(self):
         if self.match(TokenType.NIL):
             return Literal(None)
-            
+
         if self.match(TokenType.FALSE):
             return Literal(False)
 
@@ -94,7 +115,7 @@ class Parser:
             return Grouping(expr)
 
         raise self.error(self.peek(), "Expected expression.")
-    
+
     def match(self, *types):
         for token_type in types:
             if self.check(token_type):
@@ -137,3 +158,21 @@ class Parser:
             location = f"at '{token.lexeme}'"
 
         return ParseError(f"[line {token.line}] Error {location}: {message}")
+
+    def synchronize(self):
+        while not self.is_at_end():
+            if self.current > 0 and self.previous().token_type == TokenType.SEMICOLON:
+                return
+
+            if self.peek().token_type in (
+                TokenType.SHOW,
+                TokenType.FOR,
+                TokenType.IF,
+                TokenType.WHILE,
+                TokenType.RETURN,
+                TokenType.LET,
+                TokenType.FUNCTION
+            ):
+                return
+
+            self.advance()
