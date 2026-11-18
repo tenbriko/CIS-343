@@ -1,6 +1,6 @@
 from token_type import TokenType
-from expr import Binary, Unary, Grouping, Literal
-from stmt import Expression, Show
+from expr import Binary, Unary, Grouping, Literal, Variable, Assign
+from stmt import Expression, Show, Var, Block
 
 
 class ParseError(Exception):
@@ -16,19 +16,55 @@ class Parser:
         statements = []
 
         while not self.is_at_end():
+            if self.check(TokenType.RIGHT_BRACE):
+                print(self.error(self.peek(), "Unexpected '}' without matching '{'."))
+                self.advance()
+                continue
+
             try:
-                statements.append(self.statement())
+                statements.append(self.declaration())
             except ParseError as error:
                 print(error)
                 self.synchronize()
-
         return statements
+
+    def declaration(self):
+        if self.match(TokenType.LET):
+            return self.var_declaration()
+
+        return self.statement()
+
+    def var_declaration(self):
+        name = self.consume(TokenType.IDENTIFIER, "Expected variable name.")
+
+        initializer = None
+        if self.match(TokenType.EQUAL):
+            initializer = self.expression()
+
+        self.consume(TokenType.SEMICOLON, "Expected ';' after variable declaration.")
+        return Var(name, initializer)
 
     def statement(self):
         if self.match(TokenType.SHOW):
             return self.show_statement()
+        
+        if self.match(TokenType.LEFT_BRACE):
+            return Block(self.block())
 
         return self.expression_statement()
+
+    def block(self):
+        statements = []
+
+        while not self.check(TokenType.RIGHT_BRACE) and not self.is_at_end():
+            try:
+                statements.append(self.declaration())
+            except ParseError as error:
+                print(error)
+                self.synchronize()
+
+        self.consume(TokenType.RIGHT_BRACE, "Expected '}' after block.")
+        return statements
 
     def show_statement(self):
         value = self.expression()
@@ -41,7 +77,21 @@ class Parser:
         return Expression(value)
 
     def expression(self):
-        return self.equality()
+        return self.assignment()
+
+    def assignment(self):
+        expr = self.equality()
+
+        if self.match(TokenType.EQUAL):
+            equals = self.previous()
+            value = self.assignment()
+
+            if isinstance(expr, Variable):
+                return Assign(expr.name, value)
+
+            raise self.error(equals, "Invalid assignment target.")
+
+        return expr
 
     def equality(self):
         expr = self.comparison()
@@ -109,6 +159,9 @@ class Parser:
         if self.match(TokenType.NUMBER, TokenType.STRING):
             return Literal(self.previous().literal)
 
+        if self.match(TokenType.IDENTIFIER):
+            return Variable(self.previous())
+
         if self.match(TokenType.LEFT_PAREN):
             expr = self.expression()
             self.consume(TokenType.RIGHT_PAREN, "Expected ')' after expression.")
@@ -162,6 +215,9 @@ class Parser:
     def synchronize(self):
         while not self.is_at_end():
             if self.current > 0 and self.previous().token_type == TokenType.SEMICOLON:
+                return
+            
+            if self.check(TokenType.RIGHT_BRACE):
                 return
 
             if self.peek().token_type in (

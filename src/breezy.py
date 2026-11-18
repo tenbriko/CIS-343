@@ -4,7 +4,7 @@ from parser import Parser
 from evaluator import Evaluator
 
 
-def run(source):
+def run(source, evaluator=None):
     scanner = Scanner(source)
     tokens = scanner.scan_tokens()
 
@@ -14,7 +14,8 @@ def run(source):
     parser = Parser(tokens)
     statements = parser.parse()
 
-    evaluator = Evaluator()
+    if evaluator is None:
+        evaluator = Evaluator()
 
     for statement in statements:
         try:
@@ -32,10 +33,12 @@ def run_file(path):
 
 
 def run_prompt():
+    evaluator = Evaluator()
+
     while True:
         try:
             line = input("> ")
-            run(line)
+            run(line, evaluator)
         except (KeyboardInterrupt, EOFError):
             print()
             break

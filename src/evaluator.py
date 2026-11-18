@@ -1,8 +1,12 @@
-from expr import Binary, Unary, Grouping, Literal
-from stmt import Expression, Show
+from expr import Binary, Unary, Grouping, Literal, Variable, Assign
+from stmt import Expression, Show, Var, Block
+from environment import Environment
 
 
 class Evaluator:
+    def __init__(self):
+        self.environment = Environment()
+
     def execute(self, stmt):
         if isinstance(stmt, Expression):
             self.evaluate(stmt.expression)
@@ -10,7 +14,33 @@ class Evaluator:
         elif isinstance(stmt, Show):
             value = self.evaluate(stmt.expression)
             print(self.stringify(value))
+        
+        elif isinstance(stmt, Var):
+            value = None
 
+            if stmt.initializer is not None:
+                value = self.evaluate(stmt.initializer)
+
+            if stmt.name.lexeme in self.environment.values:
+                self.error(stmt.name, f"Variable '{stmt.name.lexeme}' is already declared in this scope.")
+
+            self.environment.define(stmt.name.lexeme, value)
+
+        elif isinstance(stmt, Block):
+            self.execute_block(stmt.statements, Environment(self.environment))
+
+    def execute_block(self, statements, environment):
+        previous = self.environment
+
+        try:
+            self.environment = environment
+
+            for statement in statements:
+                self.execute(statement)
+
+        finally:
+            self.environment = previous
+    
     def stringify(self, value):
         if value is None:
             return "nil"
@@ -29,17 +59,25 @@ class Evaluator:
 
         if isinstance(expr, Grouping):
             return self.evaluate(expr.expression)
+        
+        if isinstance(expr, Variable):
+            return self.environment.get(expr.name)
+
+        if isinstance(expr, Assign):
+            value = self.evaluate(expr.value)
+            self.environment.assign(expr.name, value)
+            return value
 
         if isinstance(expr, Unary):
             right = self.evaluate(expr.right)
             operator = expr.operator.lexeme
 
-            if operator == "!":
-                return not self.is_truthy(right)
+        if operator == "!":
+            return not self.is_truthy(right)
 
-            if operator == "-":
-                self.check_number(right, expr.operator)
-                return -right
+        if operator == "-":
+            self.check_number(right, expr.operator)
+            return -right
 
         if isinstance(expr, Binary):
             left = self.evaluate(expr.left)
